@@ -1,3 +1,4 @@
+// Updated: 2026-02-12 23:33 - New AnalysisView with READY/NOT READY gate
 import { useState } from 'react';
 import InputForm from './components/InputForm';
 import AnalysisView from './components/AnalysisView';
