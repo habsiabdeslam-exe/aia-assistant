@@ -23,7 +23,7 @@ export default function AnalysisView({
   const sections = parseAnalysisSections(analysis);
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-6 space-y-6">
+    <div className="w-full max-w-6xl mx-auto p-6 space-y-8">
       {/* Header */}
       <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
         <div className="flex items-center gap-3">
@@ -67,7 +67,7 @@ export default function AnalysisView({
 
       {/* Business Intent Section */}
       {sections.businessIntent && (
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mt-8">
           <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
             <Info className="w-5 h-5 text-blue-600" />
             Business Intent and Scope
@@ -78,14 +78,14 @@ export default function AnalysisView({
 
       {/* Functional Requirements Table */}
       {sections.frTable && (
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Functional Requirements (FR)</h3>
-          <div className="overflow-x-auto">
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mt-8">
+          <h3 className="text-lg font-bold text-gray-800 mb-6">Functional Requirements (FR)</h3>
+          <div className="overflow-x-auto mb-4">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
                 table: ({ node, ...props }) => (
-                  <table className="min-w-full divide-y divide-gray-300 border border-gray-300 rounded-lg overflow-hidden" {...props} />
+                  <table className="min-w-full divide-y divide-gray-300 border-2 border-gray-300 rounded-lg overflow-hidden shadow-sm" {...props} />
                 ),
                 thead: ({ node, ...props }) => (
                   <thead className="bg-blue-50" {...props} />
@@ -108,7 +108,7 @@ export default function AnalysisView({
             </ReactMarkdown>
           </div>
           {sections.frRemarks && sections.frRemarks.length > 0 && (
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <h4 className="text-sm font-semibold text-blue-900 mb-2">FR Remarks:</h4>
               <ul className="space-y-1">
                 {sections.frRemarks.map((remark, idx) => (
@@ -125,14 +125,14 @@ export default function AnalysisView({
 
       {/* Non-Functional Requirements Table */}
       {sections.nfrTable && (
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Non-Functional Requirements (NFR)</h3>
-          <div className="overflow-x-auto">
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mt-8">
+          <h3 className="text-lg font-bold text-gray-800 mb-6">Non-Functional Requirements (NFR)</h3>
+          <div className="overflow-x-auto mb-4">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
                 table: ({ node, ...props }) => (
-                  <table className="min-w-full divide-y divide-gray-300 border border-gray-300 rounded-lg overflow-hidden" {...props} />
+                  <table className="min-w-full divide-y divide-gray-300 border-2 border-gray-300 rounded-lg overflow-hidden shadow-sm" {...props} />
                 ),
                 thead: ({ node, ...props }) => (
                   <thead className="bg-purple-50" {...props} />
@@ -155,7 +155,7 @@ export default function AnalysisView({
             </ReactMarkdown>
           </div>
           {sections.nfrRemarks && sections.nfrRemarks.length > 0 && (
-            <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+            <div className="mt-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
               <h4 className="text-sm font-semibold text-purple-900 mb-2">NFR Remarks:</h4>
               <ul className="space-y-1">
                 {sections.nfrRemarks.map((remark, idx) => (
@@ -172,10 +172,10 @@ export default function AnalysisView({
 
       {/* Architecture Gaps */}
       {sections.gaps && (
-        <div className={`rounded-xl shadow-sm p-6 border-2 ${
+        <div className={`rounded-xl shadow-sm p-6 border-2 mt-8 ${
           isReady ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'
         }`}>
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Architecture Gap Analysis</h3>
+          <h3 className="text-lg font-bold text-gray-800 mb-6">Architecture Gap Analysis</h3>
           {isReady ? (
             <div className="flex items-center gap-2 text-green-700">
               <CheckCircle className="w-5 h-5" />
@@ -187,7 +187,7 @@ export default function AnalysisView({
                 remarkPlugins={[remarkGfm]}
                 components={{
                   table: ({ node, ...props }) => (
-                    <table className="min-w-full divide-y divide-gray-300 border border-red-300 rounded-lg overflow-hidden" {...props} />
+                    <table className="min-w-full divide-y divide-gray-300 border-2 border-red-300 rounded-lg overflow-hidden shadow-sm" {...props} />
                   ),
                   thead: ({ node, ...props }) => (
                     <thead className="bg-red-100" {...props} />
