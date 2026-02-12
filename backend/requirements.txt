@@ -5,6 +5,8 @@ python-dotenv==1.0.0
 pydantic==2.5.3
 # OpenAI SDK - MUST be 1.12.0 or higher for compatibility
 openai==1.12.0
+# Pin httpx to avoid 'proxies' parameter incompatibility with openai SDK
+httpx==0.27.2
 # Azure dependencies
 azure-search-documents==11.4.0
 azure-identity==1.15.0
