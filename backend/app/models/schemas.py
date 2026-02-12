@@ -7,8 +7,9 @@ class RequirementsInput(BaseModel):
 
 
 class QualificationOutput(BaseModel):
-    qualification: Dict[str, Any] = Field(..., description="Qualification details from GPT-4 analysis")
-    gap: float = Field(..., description="Gap analysis score")
+    analysis: str = Field(..., description="Full markdown analysis from analyzer including FR/NFR tables and gaps")
+    status: str = Field(..., description="READY or NOT READY status")
+    has_gaps: bool = Field(..., description="Whether MUST-HAVE gaps exist")
 
 
 class ValidationInput(BaseModel):

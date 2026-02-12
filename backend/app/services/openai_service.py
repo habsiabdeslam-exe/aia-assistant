@@ -45,7 +45,7 @@ class AzureOpenAIService:
     def qualify_requirements(self, requirements: str) -> Dict[str, Any]:
         """
         Analyze and qualify requirements using GPT-4.
-        Returns qualification details and gap analysis.
+        Returns markdown analysis with READY/NOT READY status.
         """
         try:
             logger.info("Starting requirements qualification")
@@ -61,17 +61,28 @@ class AzureOpenAIService:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                temperature=0.3,
-                response_format={"type": "json_object"}
+                temperature=0.3
             )
             
-            import json
-            qualification = json.loads(response.choices[0].message.content)
-            gap = qualification.get("overall_gap", 0)
+            analysis_text = response.choices[0].message.content
             
-            logger.info(f"Requirements qualification completed. GAB score: {gap}")
+            # Parse status from analysis
+            status = "NOT READY"
+            has_gaps = True
+            if "Status: READY" in analysis_text:
+                status = "READY"
+                has_gaps = False
+            elif "MUST-HAVE gaps: 0" in analysis_text:
+                status = "READY"
+                has_gaps = False
             
-            return {"qualification": qualification, "gap": gap}
+            logger.info(f"Requirements qualification completed. Status: {status}")
+            
+            return {
+                "analysis": analysis_text,
+                "status": status,
+                "has_gaps": has_gaps
+            }
             
         except Exception as e:
             logger.error(f"Error in qualify_requirements: {e}")
@@ -79,28 +90,31 @@ class AzureOpenAIService:
     
     def generate_tad(self, requirements: Dict[str, Any], rag_chunks: List[Dict[str, Any]]) -> str:
         """
-        Generate Technical Architecture Document using GPT-4 with RAG context.
+        Generate Technical Architecture Document using GPT-4 with RAG context following Sodexo template.
         """
         try:
-            logger.info("Starting TAD generation")
+            logger.info("Starting TAD generation with Sodexo template")
             
             # Build RAG context from chunks
             rag_context = self._build_rag_context(rag_chunks)
             
-            # Load TAD generation prompt template
-            system_prompt = self._load_prompt_template("tad_generator.txt")
+            # Load Sodexo TAD generation prompt template
+            system_prompt = self._load_prompt_template("tad_generator_sodexo.txt")
             
             # Format requirements
             import json
             requirements_text = json.dumps(requirements, indent=2)
             
-            user_prompt = f"""Requirements:
+            user_prompt = f"""Requirements Analysis (from Analyzer):
 {requirements_text}
 
-Reference Materials from Knowledge Base:
+Sodexo Knowledge Base (RAG Context):
 {rag_context}
 
-Generate a comprehensive Technical Architecture Document based on the above requirements and reference materials."""
+Generate a comprehensive Technical Architecture Document following the Sodexo template structure.
+Use ONLY policies from the Sodexo knowledge base provided above.
+Cite sources in format: [Source: Document Title, Section X, Version Y]
+If a policy is not found in the knowledge base, state "Policy not found in KB" and use industry best practices."""
 
             logger.debug(f"Calling GPT-4 for TAD generation with {len(rag_chunks)} RAG chunks")
             

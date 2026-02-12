@@ -27,10 +27,11 @@ async def qualify_requirements(input_data: RequirementsInput):
         service = get_openai_service()
         result = service.qualify_requirements(input_data.requirements)
         
-        logger.info(f"Qualification completed with GAB score: {result['gap']}")
+        logger.info(f"Qualification completed. Status: {result['status']}")
         return QualificationOutput(
-            qualification=result["qualification"],
-            gap=result["gap"]
+            analysis=result["analysis"],
+            status=result["status"],
+            has_gaps=result["has_gaps"]
         )
         
     except HTTPException:
