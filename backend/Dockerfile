@@ -10,9 +10,13 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends gcc && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install Python dependencies
+# Upgrade pip and clear any cache
+RUN pip install --upgrade pip && \
+    pip cache purge || true
+
+# Copy requirements and install Python dependencies with explicit no-cache
 COPY requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+RUN pip install --no-cache-dir --user --force-reinstall -r requirements.txt
 
 # Stage 2: Runtime - Minimal production image
 FROM python:3.11-slim
