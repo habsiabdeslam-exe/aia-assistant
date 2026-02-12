@@ -1,9 +1,7 @@
 import axios from 'axios';
 import type {
-  RequirementsInput,
   QualificationResponse,
   ValidationResponse,
-  GenerateTADInput,
   GenerateTADResponse,
 } from '../types';
 
