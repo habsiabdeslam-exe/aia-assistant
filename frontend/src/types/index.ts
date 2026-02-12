@@ -13,6 +13,13 @@ export interface Qualification {
 }
 
 export interface QualificationResponse {
+  analysis: string;
+  status: string;
+  has_gaps: boolean;
+}
+
+// Legacy format (kept for backward compatibility)
+export interface LegacyQualificationResponse {
   qualification: Qualification;
   gap: number;
 }

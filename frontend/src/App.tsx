@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import InputForm from './components/InputForm';
-import QualificationView from './components/QualificationView';
+import AnalysisView from './components/AnalysisView';
 import TADViewer from './components/TADViewer';
 import { qualifyRequirements, generateTAD } from './services/api';
-import type { Qualification } from './types';
 import { FileText, AlertCircle } from 'lucide-react';
 
-type AppStep = 'input' | 'qualification' | 'tad';
+type AppStep = 'input' | 'analysis' | 'tad';
 
 function App() {
   const [step, setStep] = useState<AppStep>('input');
@@ -14,8 +13,9 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   
   const [requirements, setRequirements] = useState<string>('');
-  const [qualification, setQualification] = useState<Qualification | null>(null);
-  const [gap, setGap] = useState<number>(0);
+  const [analysis, setAnalysis] = useState<string>('');
+  const [status, setStatus] = useState<string>('');
+  const [hasGaps, setHasGaps] = useState<boolean>(true);
   const [tadMarkdown, setTadMarkdown] = useState<string>('');
 
   const handleQualify = async (requirementsInput: string) => {
@@ -25,9 +25,10 @@ function App() {
     try {
       const response = await qualifyRequirements(requirementsInput);
       setRequirements(requirementsInput);
-      setQualification(response.qualification);
-      setGap(response.gap);
-      setStep('qualification');
+      setAnalysis(response.analysis);
+      setStatus(response.status);
+      setHasGaps(response.has_gaps);
+      setStep('analysis');
     } catch (err) {
       setError(
         err instanceof Error 
@@ -40,7 +41,7 @@ function App() {
   };
 
   const handleGenerateTAD = async () => {
-    if (!qualification) return;
+    if (!analysis) return;
     
     setLoading(true);
     setError(null);
@@ -48,7 +49,8 @@ function App() {
     try {
       const requirementsData = {
         original_requirements: requirements,
-        qualification: qualification,
+        analysis: analysis,
+        status: status,
       };
       
       const response = await generateTAD(requirementsData);
@@ -68,8 +70,9 @@ function App() {
   const handleReset = () => {
     setStep('input');
     setRequirements('');
-    setQualification(null);
-    setGap(0);
+    setAnalysis('');
+    setStatus('');
+    setHasGaps(true);
     setTadMarkdown('');
     setError(null);
   };
@@ -121,11 +124,12 @@ function App() {
           <InputForm onQualify={handleQualify} loading={loading} />
         )}
 
-        {/* Step 2: Qualification View */}
-        {step === 'qualification' && qualification && (
-          <QualificationView
-            qualification={qualification}
-            gap={gap}
+        {/* Step 2: Analysis View */}
+        {step === 'analysis' && analysis && (
+          <AnalysisView
+            analysis={analysis}
+            status={status}
+            hasGaps={hasGaps}
             onGenerateTAD={handleGenerateTAD}
             loading={loading}
           />
