@@ -160,5 +160,15 @@ Generate a comprehensive Technical Architecture Document based on the above requ
             raise
 
 
-# Singleton instance
-openai_service = AzureOpenAIService()
+# Singleton instance - lazy loaded
+_openai_service_instance = None
+
+def get_openai_service() -> AzureOpenAIService:
+    """Get or create the OpenAI service singleton instance."""
+    global _openai_service_instance
+    if _openai_service_instance is None:
+        _openai_service_instance = AzureOpenAIService()
+    return _openai_service_instance
+
+# For backward compatibility
+openai_service = None  # Will be initialized on first use

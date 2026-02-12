@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 import logging
 from app.models.schemas import RequirementsInput, QualificationOutput
-from app.services.openai_service import openai_service
+from app.services.openai_service import get_openai_service
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -24,7 +24,8 @@ async def qualify_requirements(input_data: RequirementsInput):
             raise HTTPException(status_code=400, detail="Requirements cannot be empty")
         
         logger.info(f"Qualifying requirements (length: {len(input_data.requirements)} chars)")
-        result = openai_service.qualify_requirements(input_data.requirements)
+        service = get_openai_service()
+        result = service.qualify_requirements(input_data.requirements)
         
         logger.info(f"Qualification completed with GAB score: {result['gap']}")
         return QualificationOutput(

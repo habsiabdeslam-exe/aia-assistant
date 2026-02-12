@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 import logging
 from app.models.schemas import GenerateTADInput, GenerateTADOutput
-from app.services.openai_service import openai_service
+from app.services.openai_service import get_openai_service
 from app.services.search_service import search_service
 import json
 
@@ -30,7 +30,8 @@ async def generate_tad(input_data: GenerateTADInput):
         
         # Step 1: Create embedding of requirements
         logger.info("Creating embedding for requirements")
-        query_vector = openai_service.create_embedding(requirements_text)
+        service = get_openai_service()
+        query_vector = service.create_embedding(requirements_text)
         
         # Step 2: Search Azure AI Search for relevant chunks using hybrid search (text + vector)
         # Using top_k=10 to get comprehensive context from knowledge base
@@ -46,7 +47,7 @@ async def generate_tad(input_data: GenerateTADInput):
         
         # Step 3 & 4: Build prompt and generate TAD using GPT-4
         logger.info(f"Generating TAD with {len(rag_results)} RAG chunks")
-        tad_markdown = openai_service.generate_tad(requirements, rag_results)
+        tad_markdown = service.generate_tad(requirements, rag_results)
         
         # Step 5: Return the generated TAD
         logger.info("TAD generation completed successfully")
