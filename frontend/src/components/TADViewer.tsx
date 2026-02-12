@@ -1,5 +1,6 @@
 import { Download, FileDown } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface TADViewerProps {
   tadMarkdown: string;
@@ -70,34 +71,60 @@ export default function TADViewer({ tadMarkdown }: TADViewerProps) {
         className="prose prose-slate max-w-none p-6 bg-gray-50 rounded-lg border border-gray-200"
       >
         <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
           components={{
             h1: ({ children }) => (
-              <h1 className="text-3xl font-bold text-gray-900 mb-4 pb-2 border-b-2 border-gray-300">
+              <h1 className="text-3xl font-bold text-gray-900 mb-6 pb-3 border-b-2 border-gray-300">
                 {children}
               </h1>
             ),
             h2: ({ children }) => (
-              <h2 className="text-2xl font-bold text-gray-800 mt-6 mb-3">
+              <h2 className="text-2xl font-bold text-gray-800 mt-8 mb-4">
                 {children}
               </h2>
             ),
             h3: ({ children }) => (
-              <h3 className="text-xl font-semibold text-gray-800 mt-4 mb-2">
+              <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">
                 {children}
               </h3>
             ),
+            h4: ({ children }) => (
+              <h4 className="text-lg font-semibold text-gray-700 mt-4 mb-2">
+                {children}
+              </h4>
+            ),
             p: ({ children }) => (
-              <p className="text-gray-700 mb-3 leading-relaxed">{children}</p>
+              <p className="text-gray-700 mb-4 leading-relaxed">{children}</p>
             ),
             ul: ({ children }) => (
-              <ul className="list-disc list-inside mb-3 space-y-1 text-gray-700">
+              <ul className="list-disc list-inside mb-4 space-y-1 text-gray-700">
                 {children}
               </ul>
             ),
             ol: ({ children }) => (
-              <ol className="list-decimal list-inside mb-3 space-y-1 text-gray-700">
+              <ol className="list-decimal list-inside mb-4 space-y-1 text-gray-700">
                 {children}
               </ol>
+            ),
+            table: ({ node, ...props }) => (
+              <div className="overflow-x-auto my-6">
+                <table className="min-w-full divide-y divide-gray-300 border-2 border-gray-300 rounded-lg overflow-hidden shadow-sm" {...props} />
+              </div>
+            ),
+            thead: ({ node, ...props }) => (
+              <thead className="bg-blue-50" {...props} />
+            ),
+            tbody: ({ node, ...props }) => (
+              <tbody className="bg-white divide-y divide-gray-200" {...props} />
+            ),
+            tr: ({ node, ...props }) => (
+              <tr className="hover:bg-gray-50 transition-colors" {...props} />
+            ),
+            th: ({ node, ...props }) => (
+              <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 last:border-r-0" {...props} />
+            ),
+            td: ({ node, ...props }) => (
+              <td className="px-6 py-4 text-sm text-gray-700 border-r border-gray-200 last:border-r-0" {...props} />
             ),
             code: ({ children, className }) => {
               const isInline = !className;
