@@ -164,7 +164,7 @@ class Config:
     
     @property
     def azure_search_index_name(self) -> str:
-        value = self._get_secret("AZURE-SEARCH-INDEX-NAME", "AZURE_SEARCH_INDEX_NAME", "tad-knowledge-base")
+        value = self._get_secret("AZURE-SEARCH-INDEX-NAME", "AZURE_SEARCH_INDEX_NAME", "rag-1770901801308")
         return value
 
 

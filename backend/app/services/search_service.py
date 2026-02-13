@@ -37,25 +37,25 @@ class AzureSearchService:
                 vector_queries=[{
                     "kind": "vector",
                     "vector": query_vector,
-                    "fields": "content_vector",
+                    "fields": "text_vector",
                     "k": top_k
                 }],
-                select=["content", "metadata", "title"],
+                select=["chunk", "title"],
                 top=top_k
             )
             
             chunks = []
             for result in results:
                 chunks.append({
-                    "content": result.get("content", ""),
+                    "content": result.get("chunk", ""),
                     "score": result.get("@search.score", 0.0),
-                    "metadata": result.get("metadata", {}),
+                    "metadata": {},
                     "title": result.get("title", "")
                 })
             
             return chunks
         except Exception as e:
-            print(f"Error performing vector search: {e}")
+            logger.error(f"Error performing vector search: {e}")
             return []
     
     def hybrid_search(self, query_text: str, query_vector: List[float], top_k: int = 10) -> List[Dict[str, Any]]:
@@ -71,19 +71,19 @@ class AzureSearchService:
                 vector_queries=[{
                     "kind": "vector",
                     "vector": query_vector,
-                    "fields": "content_vector",
+                    "fields": "text_vector",
                     "k": top_k
                 }],
-                select=["content", "metadata", "title"],
+                select=["chunk", "title"],
                 top=top_k
             )
             
             chunks = []
             for result in results:
                 chunks.append({
-                    "content": result.get("content", ""),
+                    "content": result.get("chunk", ""),
                     "score": result.get("@search.score", 0.0),
-                    "metadata": result.get("metadata", {}),
+                    "metadata": {},
                     "title": result.get("title", "")
                 })
             
@@ -101,22 +101,22 @@ class AzureSearchService:
         try:
             results = self.search_client.search(
                 search_text=query_text,
-                select=["content", "metadata", "title"],
+                select=["chunk", "title"],
                 top=top_k
             )
             
             chunks = []
             for result in results:
                 chunks.append({
-                    "content": result.get("content", ""),
+                    "content": result.get("chunk", ""),
                     "score": result.get("@search.score", 0.0),
-                    "metadata": result.get("metadata", {}),
+                    "metadata": {},
                     "title": result.get("title", "")
                 })
             
             return chunks
         except Exception as e:
-            print(f"Error performing keyword search: {e}")
+            logger.error(f"Error performing keyword search: {e}")
             return []
 
 
