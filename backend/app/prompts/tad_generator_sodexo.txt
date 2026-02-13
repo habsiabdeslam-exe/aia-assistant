@@ -354,15 +354,35 @@ Then detail:
 Provide a structured paragraph explaining the identity and access management strategy.
 
 **CRITICAL - RAG-BASED NAMING:**
-- **Authentication mechanism:** Azure AD, B2C, etc.
-- **Authorization model:** RBAC, ABAC
-- **Entra ID Security Groups:** Generate required security groups with names STRICTLY from naming convention retrieved via RAG
-  - Separate groups by role (operators, admins, devops, read-only, etc.)
-  - Map each group to Azure RBAC roles
-  - If IAM naming convention not found: "Entra ID security group naming convention not found in AI Search index"
-  - Do NOT fabricate group name patterns like "sg-*-admins" unless retrieved from RAG
-- **Service principals and managed identities:** Naming per RAG standard
-- **Sodexo IAM policies:** [cite from KB or state "Relevant policy not found in knowledge base"]
+You MUST extract the Entra ID security group naming pattern from RAG and generate ALL concrete group names.
+
+**REQUIRED OUTPUT FORMAT:**
+
+**Entra ID Security Groups:**
+Pattern: [extracted pattern from RAG, e.g., sg-{application}-{role}]
+Source: [cite document]
+
+Generated Groups:
+- Admins: `sg-[application]-admins` → Maps to Owner role
+- Operators: `sg-[application]-operators` → Maps to Contributor role  
+- DevOps: `sg-[application]-devops` → Maps to Contributor + DevOps permissions
+- Read-only: `sg-[application]-readonly` → Maps to Reader role
+
+**Example for IoT Platform:**
+- Admins: `sg-iotplatform-admins`
+- Operators: `sg-iotplatform-operators`
+- DevOps: `sg-iotplatform-devops`
+- Read-only: `sg-iotplatform-readonly`
+
+**Authentication:** Azure AD with Conditional Access
+**Authorization:** Azure RBAC with least-privilege principle
+**Service Principals:** [naming per RAG pattern]
+**Managed Identities:** System-assigned for Azure resources
+
+If IAM naming convention not found: "Entra ID security group naming convention not found in AI Search index"
+
+❌ DO NOT write: "Security groups will be defined per role"
+✅ DO write: Concrete group names with pattern and source citation
 
 #### 9.h.ii. Encryption
 - **At rest:** Storage encryption, database TDE, disk encryption
@@ -421,29 +441,48 @@ Provide a detailed Mermaid network diagram showing:
 Provide a structured paragraph explaining the network configuration and exposure model.
 
 **CRITICAL - RAG-BASED NAMING:**
-- **VNets and Subnets:** Generate VNet and Subnet names STRICTLY from naming conventions retrieved via RAG
-  - If network naming convention not found: "VNet/Subnet naming convention not found in AI Search index"
-  - Do NOT use example patterns like "vnet-prod-*" or "snet-*" unless retrieved from RAG
-- **Addressing Strategy:** Must align with network standards retrieved from RAG
-  - If network segmentation standard not found: "Network segmentation standard not found in AI Search index"
+You MUST extract the VNet and Subnet naming patterns from RAG and generate ALL concrete network resource names.
 
-Then detail:
-- **Endpoint Configuration**: [public vs private endpoints, justification]
-- **Exposure Mode**: [internet-facing vs internal-only, security boundaries]
-- **Inbound/Outbound Rules**: [NSG rules, firewall policies, allowed traffic]
-- **VNet Integration**: [subnet design per RAG standard, service endpoints, private links]
-- **DNS Configuration**: [private DNS zones, resolution strategy]
-- **Egress Control**: [outbound filtering, NAT gateway, forced tunneling]
-- **Sodexo Network Policies**: [cite from KB or state "Relevant policy not found in knowledge base"]
+**REQUIRED OUTPUT FORMAT:**
 
-**Example (ONLY if retrieved from RAG):**
-"The network architecture follows a defense-in-depth approach with private-by-default connectivity. VNet naming follows [Source: Sodexo Network Naming Convention v2.0]: [actual pattern from RAG]
+**Virtual Networks:**
+Pattern: [extracted pattern from RAG, e.g., vnet-{env}-{region}-{purpose}]
+Source: [cite document]
 
-- VNets: [actual VNet names per RAG standard]
-- Subnets: [actual Subnet names per RAG standard]
-- Endpoints: Private endpoints for all PaaS services, no public exposure
-- Exposure: Internal-only, accessed via ExpressRoute or VPN
-- Sodexo Network: [Source: Sodexo Network Security Standard v3.0, Section 5.1]"
+Generated VNets:
+- Hub VNet: `vnet-prod-[region]-hub` (10.0.0.0/16)
+- Spoke VNet: `vnet-prod-[region]-[application]` (10.1.0.0/16)
+
+**Subnets:**
+Pattern: [extracted pattern from RAG, e.g., snet-{tier}-{application}]
+Source: [cite document]
+
+Generated Subnets:
+- Application tier: `snet-app-[application]` (10.1.1.0/24)
+- Data tier: `snet-data-[application]` (10.1.2.0/24)
+- Gateway: `snet-gateway-[application]` (10.1.3.0/24)
+- Management: `snet-mgmt-[application]` (10.1.4.0/24)
+
+**Example for IoT Platform in North Europe:**
+- Hub VNet: `vnet-prod-northeurope-hub` (10.0.0.0/16)
+- Spoke VNet: `vnet-prod-northeurope-iotplatform` (10.1.0.0/16)
+- App Subnet: `snet-app-iotplatform` (10.1.1.0/24)
+- Data Subnet: `snet-data-iotplatform` (10.1.2.0/24)
+- Gateway Subnet: `snet-gateway-iotplatform` (10.1.3.0/24)
+
+**Network Configuration:**
+- **Endpoint Configuration**: Private endpoints for all PaaS services, no public exposure
+- **Exposure Mode**: Internal-only, accessed via ExpressRoute or VPN
+- **Inbound Rules**: Allow HTTPS (443) from corporate network, deny all else
+- **Outbound Rules**: Restricted to Azure services and approved external APIs
+- **VNet Integration**: Hub-spoke topology with VNet peering
+- **DNS Configuration**: Azure Private DNS zones for private endpoint resolution
+- **Egress Control**: Forced tunneling via Azure Firewall in hub VNet
+
+If network naming convention not found: "VNet/Subnet naming convention not found in AI Search index"
+
+❌ DO NOT write: "VNet naming conventions will be established per RAG standards"
+✅ DO write: Concrete VNet and Subnet names with patterns and address spaces
 
 ## 10. Transformational
 
@@ -526,12 +565,114 @@ BEFORE generating the TAD, you MUST query Azure AI Search index for:
 11. Reference architectures and reusable patterns
 12. Any other relevant Sodexo policies
 
-**RAG QUERY EXECUTION:**
-- Execute RAG queries for each section BEFORE generating content
-- Extract naming structure rules from retrieved documents
-- Apply naming rules dynamically when generating resource names
-- Use ONLY information from the authorized Sodexo knowledge base
-- Cite sources in format: [Source: Document Title, Section X, Version Y]
+---
+
+HOW TO EXTRACT AND APPLY NAMING CONVENTIONS FROM RAG (CRITICAL)
+
+When you receive chunks from Azure AI Search containing naming conventions, you MUST:
+
+**STEP 1: IDENTIFY THE PATTERN**
+Look for patterns in the retrieved chunks like:
+- "Pattern: rg-{environment}-{application}-{region}-{instance}"
+- "Format: vnet-{env}-{region}-{purpose}"
+- "Naming: sg-{application}-{role}"
+
+**STEP 2: EXTRACT PATTERN COMPONENTS**
+Identify each variable component:
+- {environment}: prod, dev, test, staging
+- {application}: application name (lowercase, no spaces)
+- {region}: Azure region short code (westeurope, northeurope, etc.)
+- {instance}: 01-99
+- {role}: admins, operators, devops, readonly
+
+**STEP 3: APPLY TO CURRENT SOLUTION**
+Replace variables with actual values from the user's requirements:
+
+EXAMPLE:
+Retrieved pattern: "rg-{environment}-{application}-{region}-{instance}"
+User's solution: IoT Platform in North Europe, Production environment
+Generated name: "rg-prod-iotplatform-northeurope-01"
+
+**STEP 4: GENERATE ALL REQUIRED NAMES**
+For each resource type, generate concrete names:
+
+Resource Groups:
+- Production: rg-prod-iotplatform-northeurope-01
+- Development: rg-dev-iotplatform-northeurope-01
+- Test: rg-test-iotplatform-northeurope-01
+
+VNets:
+- Hub: vnet-prod-northeurope-hub
+- Spoke: vnet-prod-northeurope-iotplatform
+
+Subnets:
+- Application tier: snet-app-iotplatform
+- Data tier: snet-data-iotplatform
+- Gateway: snet-gateway-iotplatform
+
+Entra ID Groups:
+- Admins: sg-iotplatform-admins
+- Operators: sg-iotplatform-operators
+- DevOps: sg-iotplatform-devops
+- Read-only: sg-iotplatform-readonly
+
+**STEP 5: CITE THE SOURCE**
+Always cite where the pattern came from:
+[Source: Sodexo Naming Convention v2.0, Section 2.1]
+
+---
+
+**CRITICAL RULES FOR NAME GENERATION:**
+
+1. ✅ DO extract the exact pattern from RAG chunks
+2. ✅ DO replace variables with actual solution values
+3. ✅ DO generate concrete, usable names
+4. ✅ DO cite the source document
+5. ✅ DO generate names for ALL environments (prod, dev, test)
+6. ✅ DO generate names for ALL resource types mentioned
+
+7. ❌ DO NOT write "per RAG standards" without generating names
+8. ❌ DO NOT write "naming conventions will be established"
+9. ❌ DO NOT write generic statements without concrete names
+10. ❌ DO NOT skip name generation
+11. ❌ DO NOT invent patterns if not found in RAG
+
+---
+
+**EXAMPLE OF CORRECT OUTPUT:**
+
+### 9.a. Hosting
+
+The IoT Platform will be hosted in the North Europe Azure region. Resource Groups are organized following the naming convention retrieved from [Source: Sodexo Naming Convention v2.0, Section 2.1].
+
+**Resource Groups:**
+Pattern: rg-{environment}-{application}-{region}-{instance}
+
+- Production: `rg-prod-iotplatform-northeurope-01`
+- Development: `rg-dev-iotplatform-northeurope-01`
+- Test: `rg-test-iotplatform-northeurope-01`
+
+**Tags:**
+Per [Source: Sodexo Tagging Standard v1.5, Section 3]:
+- Environment: Production / Development / Test
+- CostCenter: CC-IoT-2024
+- Owner: iot-team@sodexo.com
+- Application: IoT Platform
+- Criticality: High
+
+---
+
+**EXAMPLE OF INCORRECT OUTPUT (DO NOT DO THIS):**
+
+### 9.a. Hosting ❌
+
+The IoT Platform will be hosted in the North Europe Azure region, following the naming conventions retrieved from the authorized knowledge base.
+
+Resource Groups will be organized based on functional areas. Tags will be applied to facilitate governance.
+
+[This is WRONG because it doesn't generate actual names!]
+
+---
 
 **IF STANDARD NOT FOUND IN RAG:**
 - Explicitly state: "[Standard Name] not found in AI Search index"
