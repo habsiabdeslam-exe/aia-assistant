@@ -3,6 +3,7 @@ import logging
 from app.models.schemas import GenerateTADInput, GenerateTADOutput
 from app.services.openai_service import get_openai_service
 from app.services.search_service import search_service
+from app.services.naming_service import naming_service
 import json
 
 router = APIRouter()
@@ -45,8 +46,30 @@ async def generate_tad(input_data: GenerateTADInput):
         if not rag_results:
             logger.warning("No RAG results found, proceeding with empty context")
         
+        # Step 2.5: Generate Sodexo-compliant Resource Group names using naming service
+        logger.info("Generating Resource Group names using naming service")
+        naming_data = {}
+        
+        # Extract project info from requirements
+        project_name = requirements.get("project_name", "PROJECT")
+        cloud_region = requirements.get("cloud_region", "North Europe")
+        
+        # Generate RG names for each environment
+        for env in ["DEV", "PRD", "TST"]:
+            rg_result = naming_service.generate_resource_group_name({
+                "project_name": project_name,
+                "cloud_region": cloud_region,
+                "environment": env,
+                "business_line": requirements.get("business_line", "GLB"),
+                "region": requirements.get("region", "GLB")
+            })
+            naming_data[f"rg_{env.lower()}"] = rg_result
+        
+        # Add naming data to requirements for TAD generation
+        requirements["_naming_data"] = naming_data
+        
         # Step 3 & 4: Build prompt and generate TAD using GPT-4
-        logger.info(f"Generating TAD with {len(rag_results)} RAG chunks")
+        logger.info(f"Generating TAD with {len(rag_results)} RAG chunks and naming data")
         tad_markdown = service.generate_tad(requirements, rag_results)
         
         # Step 5: Return the generated TAD

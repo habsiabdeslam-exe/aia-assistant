@@ -103,18 +103,49 @@ class AzureOpenAIService:
             
             # Format requirements
             import json
+            
+            # Extract naming data if available
+            naming_data = requirements.pop("_naming_data", {})
             requirements_text = json.dumps(requirements, indent=2)
+            
+            # Format naming data for the prompt
+            naming_context = ""
+            if naming_data:
+                naming_context = "\n\n## PRE-GENERATED SODEXO-COMPLIANT RESOURCE GROUP NAMES\n\n"
+                naming_context += "The following Resource Group names have been generated using Sodexo GCCC naming conventions retrieved from the knowledge base.\n"
+                naming_context += "YOU MUST USE THESE EXACT NAMES in the TAD. DO NOT modify or regenerate them.\n\n"
+                
+                for env_key, rg_data in naming_data.items():
+                    if "error" in rg_data:
+                        naming_context += f"\n**{env_key.upper()} Environment:**\n"
+                        naming_context += f"❌ ERROR: {rg_data['error']}\n"
+                    else:
+                        naming_context += f"\n**{env_key.upper()} Environment:**\n"
+                        naming_context += f"- Name: `{rg_data['name']}`\n"
+                        naming_context += f"- Pattern: {rg_data['pattern']}\n"
+                        naming_context += f"- Source: {rg_data['source']['file']} - {rg_data['source']['section']}\n"
+                        naming_context += f"- Components:\n"
+                        for comp_name, comp_data in rg_data['components'].items():
+                            naming_context += f"  - {comp_name}: {comp_data['value']} ({comp_data['description']})\n"
             
             user_prompt = f"""Requirements Analysis (from Analyzer):
 {requirements_text}
 
 Sodexo Knowledge Base (RAG Context):
 {rag_context}
+{naming_context}
 
 Generate a comprehensive Technical Architecture Document following the Sodexo template structure.
 Use ONLY policies from the Sodexo knowledge base provided above.
 Cite sources in format: [Source: Document Title, Section X, Version Y]
-If a policy is not found in the knowledge base, state "Policy not found in KB" and use industry best practices."""
+
+CRITICAL INSTRUCTIONS FOR RESOURCE GROUP NAMES:
+- If pre-generated Resource Group names are provided above, USE THEM EXACTLY as shown
+- DO NOT modify, regenerate, or invent Resource Group names
+- Include the pattern and source citation provided
+- If naming convention was not found (ERROR shown), state this clearly in the TAD
+
+If other policies are not found in the knowledge base, state "Policy not found in KB" and use industry best practices."""
 
             logger.debug(f"Calling GPT-4 for TAD generation with {len(rag_chunks)} RAG chunks")
             
