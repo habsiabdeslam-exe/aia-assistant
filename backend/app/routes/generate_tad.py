@@ -1,7 +1,10 @@
 from fastapi import APIRouter, HTTPException
 import logging
 from app.models.schemas import GenerateTADInput, GenerateTADOutput
-from app.services.tad_orchestrator import tad_orchestrator
+from app.services.openai_service import get_openai_service
+from app.services.search_service import search_service
+from app.services.naming_service import naming_service
+import json
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -10,29 +13,69 @@ logger = logging.getLogger(__name__)
 @router.post("/generate-tad", response_model=GenerateTADOutput)
 async def generate_tad(input_data: GenerateTADInput):
     """
-    Generate Technical Architecture Document using multi-stage orchestrated pipeline.
+    Generate Technical Architecture Document using Azure OpenAI GPT-4 with RAG.
     
-    Pipeline Stages:
-    1. Context Normalization - Validate and structure input requirements
-    2. Structured RAG Retrieval - Query knowledge base for governance standards
-    3. Writer Agent - Generate each section with professional writing
-    4. Reviewer Agent - Validate section quality and compliance
-    5. Correction Loops - Regenerate sections if validation fails
+    TEMPORARY: Using simplified single-pass generation while orchestrator is being debugged.
     
-    Returns:
-        Complete TAD with validation report and metadata
+    Process:
+    1. Create embedding of requirements
+    2. Search Azure AI Search for relevant knowledge base chunks using hybrid search
+    3. Build prompt with requirements + RAG chunks + TAD template
+    4. Call GPT-4 to generate TAD in markdown
+    5. Return the generated TAD
     """
     try:
-        logger.info("Received TAD generation request - using orchestrated pipeline")
+        logger.info("Received TAD generation request - using simplified generation")
         requirements = input_data.requirements
         
-        # Use TAD Orchestrator for multi-stage generation
-        result = await tad_orchestrator.generate_tad(requirements)
+        # Convert requirements to string for embedding and search
+        requirements_text = json.dumps(requirements, indent=2)
         
-        logger.info("TAD generation completed successfully via orchestrator")
-        logger.info(f"Metadata: {result.get('metadata', {})}")
+        # Step 1: Create embedding of requirements
+        logger.info("Creating embedding for requirements")
+        service = get_openai_service()
+        query_vector = service.create_embedding(requirements_text)
         
-        return GenerateTADOutput(tad_markdown=result["tad_markdown"])
+        # Step 2: Search Azure AI Search for relevant chunks using hybrid search (text + vector)
+        logger.info("Performing hybrid search in Azure AI Search")
+        rag_results = search_service.hybrid_search(
+            query_text=requirements_text,
+            query_vector=query_vector,
+            top_k=10
+        )
+        
+        if not rag_results:
+            logger.warning("No RAG results found, proceeding with empty context")
+        
+        # Step 2.5: Generate Sodexo-compliant Resource Group names using naming service
+        logger.info("Generating Resource Group names using naming service")
+        naming_data = {}
+        
+        # Extract project info from requirements
+        project_name = requirements.get("project_name", "PROJECT")
+        cloud_region = requirements.get("cloud_region", "North Europe")
+        
+        # Generate RG names for each environment
+        for env in ["DEV", "PRD", "TST"]:
+            rg_result = naming_service.generate_resource_group_name({
+                "project_name": project_name,
+                "cloud_region": cloud_region,
+                "environment": env,
+                "business_line": requirements.get("business_line", "GLB"),
+                "region": requirements.get("region", "GLB")
+            })
+            naming_data[f"rg_{env.lower()}"] = rg_result
+        
+        # Add naming data to requirements for TAD generation
+        requirements["_naming_data"] = naming_data
+        
+        # Step 3 & 4: Build prompt and generate TAD using GPT-4
+        logger.info(f"Generating TAD with {len(rag_results)} RAG chunks and naming data")
+        tad_markdown = service.generate_tad(requirements, rag_results)
+        
+        # Step 5: Return the generated TAD
+        logger.info("TAD generation completed successfully")
+        return GenerateTADOutput(tad_markdown=tad_markdown)
         
     except ValueError as e:
         logger.error(f"Validation error in generate_tad: {e}")
