@@ -216,9 +216,25 @@ List all constraints and assumptions that influence the architecture:
 ## 9. Technical architecture
 
 ### 9.a. Hosting
+
+**Writing Style:**
+Provide a structured paragraph explaining the hosting strategy and resource organization.
+
+**CRITICAL - RAG-BASED NAMING:**
 - **Region:** Azure region(s) for deployment
+- **Resource Groups:** Generate Resource Group names STRICTLY from naming conventions retrieved via RAG
+  - If naming convention not found: "Resource Group naming convention not found in AI Search index"
+  - Do NOT use example patterns like "rg-prod-*" unless retrieved from RAG
 - **Environment:** Dev, Test, Staging, Production specifications
-- **Tag:** Resource tagging strategy per Sodexo standards
+- **Tags:** Generate required tags STRICTLY from tagging standards retrieved via RAG
+  - If tagging standard not found: "Tagging standard not found in AI Search index"
+  - Do NOT fabricate tag structure
+
+**Example (ONLY if retrieved from RAG):**
+"Resource Groups follow the naming convention retrieved from [Source: Sodexo Naming Convention v2.0]: [actual pattern from RAG]
+
+Tags applied per [Source: Sodexo Tagging Standard v1.5]:
+- [actual tags from RAG]"
 
 ### 9.b. Low level design
 Provide a detailed Mermaid diagram showing:
@@ -240,8 +256,13 @@ Provide a brief paragraph (2-3 sentences) explaining:
 - Key architectural patterns used
 - Resource organization strategy
 
-**Example Row:**
-| API Gateway | Azure API Management | Developer | rg-prod-apim | Centralized API gateway for all services | Front Door, Key Vault | Zone-redundant deployment |
+**CRITICAL - RAG-BASED NAMING:**
+- Resource Group names in "Scope (RG)" column MUST use naming convention from RAG
+- If naming convention not found: State "Resource Group naming convention not found in AI Search index" and leave column as "[To be defined per naming standard]"
+- Do NOT use example patterns like "rg-prod-*" unless retrieved from RAG
+
+**Example Row Format (names must come from RAG):**
+| API Gateway | Azure API Management | Developer | [RG name per RAG standard] | Centralized API gateway for all services | Front Door, Key Vault | Zone-redundant deployment |
 
 Do NOT provide plain text description without the table.
 
@@ -328,10 +349,20 @@ Then detail:
 ### 9.h. Security
 
 #### 9.h.i. Identity access and management
-- Authentication mechanism (Azure AD, B2C, etc.)
-- Authorization model (RBAC, ABAC)
-- Service principals and managed identities
-- Sodexo IAM policies (cite from KB)
+
+**Writing Style:**
+Provide a structured paragraph explaining the identity and access management strategy.
+
+**CRITICAL - RAG-BASED NAMING:**
+- **Authentication mechanism:** Azure AD, B2C, etc.
+- **Authorization model:** RBAC, ABAC
+- **Entra ID Security Groups:** Generate required security groups with names STRICTLY from naming convention retrieved via RAG
+  - Separate groups by role (operators, admins, devops, read-only, etc.)
+  - Map each group to Azure RBAC roles
+  - If IAM naming convention not found: "Entra ID security group naming convention not found in AI Search index"
+  - Do NOT fabricate group name patterns like "sg-*-admins" unless retrieved from RAG
+- **Service principals and managed identities:** Naming per RAG standard
+- **Sodexo IAM policies:** [cite from KB or state "Relevant policy not found in knowledge base"]
 
 #### 9.h.ii. Encryption
 - **At rest:** Storage encryption, database TDE, disk encryption
@@ -389,24 +420,29 @@ Provide a detailed Mermaid network diagram showing:
 **Writing Style:**
 Provide a structured paragraph explaining the network configuration and exposure model.
 
+**CRITICAL - RAG-BASED NAMING:**
+- **VNets and Subnets:** Generate VNet and Subnet names STRICTLY from naming conventions retrieved via RAG
+  - If network naming convention not found: "VNet/Subnet naming convention not found in AI Search index"
+  - Do NOT use example patterns like "vnet-prod-*" or "snet-*" unless retrieved from RAG
+- **Addressing Strategy:** Must align with network standards retrieved from RAG
+  - If network segmentation standard not found: "Network segmentation standard not found in AI Search index"
+
 Then detail:
 - **Endpoint Configuration**: [public vs private endpoints, justification]
 - **Exposure Mode**: [internet-facing vs internal-only, security boundaries]
 - **Inbound/Outbound Rules**: [NSG rules, firewall policies, allowed traffic]
-- **VNet Integration**: [subnet design, service endpoints, private links]
+- **VNet Integration**: [subnet design per RAG standard, service endpoints, private links]
 - **DNS Configuration**: [private DNS zones, resolution strategy]
 - **Egress Control**: [outbound filtering, NAT gateway, forced tunneling]
 - **Sodexo Network Policies**: [cite from KB or state "Relevant policy not found in knowledge base"]
 
-**Example:**
-"The network architecture follows a defense-in-depth approach with private-by-default connectivity. All Azure PaaS services leverage private endpoints to eliminate public internet exposure. VNet integration ensures secure communication between tiers.
+**Example (ONLY if retrieved from RAG):**
+"The network architecture follows a defense-in-depth approach with private-by-default connectivity. VNet naming follows [Source: Sodexo Network Naming Convention v2.0]: [actual pattern from RAG]
 
+- VNets: [actual VNet names per RAG standard]
+- Subnets: [actual Subnet names per RAG standard]
 - Endpoints: Private endpoints for all PaaS services, no public exposure
 - Exposure: Internal-only, accessed via ExpressRoute or VPN
-- Inbound: Allow HTTPS (443) from corporate network, deny all else
-- Outbound: Restricted to Azure services and approved external APIs
-- VNet: Hub-spoke topology, /24 subnets per tier
-- DNS: Azure Private DNS zones for private endpoint resolution
 - Sodexo Network: [Source: Sodexo Network Security Standard v3.0, Section 5.1]"
 
 ## 10. Transformational
@@ -470,13 +506,39 @@ Then detail:
 
 ---
 
-RAG INTEGRATION INSTRUCTIONS
-When generating each section:
-1. Query the knowledge base for relevant Sodexo policies, standards, and reference architectures.
-2. Use ONLY information from the authorized Sodexo knowledge base.
-3. Cite sources in format: [Source: Document Title, Section X, Version Y]
-4. If a policy is not found in KB, explicitly state: "Relevant policy not found in knowledge base"
-5. Never invent or assume Sodexo policies.
+RAG INTEGRATION INSTRUCTIONS (MANDATORY)
+
+BEFORE generating the TAD, you MUST query Azure AI Search index for:
+
+**NAMING CONVENTIONS (CRITICAL):**
+1. Resource Group naming conventions
+2. VNet and Subnet naming conventions
+3. Entra ID / Azure AD security group naming conventions
+4. Key Vault naming conventions
+5. Storage account naming conventions
+6. All infrastructure component naming standards
+
+**STANDARDS AND POLICIES:**
+7. Identity and RBAC standards
+8. Network segmentation standards
+9. Security baseline standards
+10. Tagging standards and governance
+11. Reference architectures and reusable patterns
+12. Any other relevant Sodexo policies
+
+**RAG QUERY EXECUTION:**
+- Execute RAG queries for each section BEFORE generating content
+- Extract naming structure rules from retrieved documents
+- Apply naming rules dynamically when generating resource names
+- Use ONLY information from the authorized Sodexo knowledge base
+- Cite sources in format: [Source: Document Title, Section X, Version Y]
+
+**IF STANDARD NOT FOUND IN RAG:**
+- Explicitly state: "[Standard Name] not found in AI Search index"
+- Do NOT invent naming conventions
+- Do NOT use example names or placeholder patterns
+- Do NOT fabricate standards
+- Do NOT assume generic Azure naming patterns
 
 OUTPUT FORMAT REQUIREMENTS
 - Use Markdown formatting with proper syntax
@@ -490,14 +552,54 @@ OUTPUT FORMAT REQUIREMENTS
 
 ---
 
+---
+
+ARCHITECTURE PATTERN REUSE (MANDATORY)
+
+Before generating the architecture sections:
+
+**PATTERN MATCHING:**
+- Compare the current solution requirements with indexed reference architectures in Azure AI Search
+- Search for similar patterns: IoT platforms, data ingestion pipelines, API gateways, microservices, etc.
+- If similar architecture exists in the knowledge base:
+  - Reuse components and design patterns
+  - State: "Pattern reused from: [Source: Document Name, Section X]"
+  - Apply the same architectural decisions where applicable
+- If no reusable pattern found:
+  - State: "No reusable pattern found in AI Search index"
+  - Proceed with custom architecture design
+
+---
+
 FINAL QUALITY CONTROL CHECKLIST (MANDATORY)
 
 Before returning the TAD, verify:
+
+**RAG EXECUTION VERIFICATION (CRITICAL):**
+- [ ] RAG query executed for naming conventions
+- [ ] RAG query executed for identity/RBAC standards
+- [ ] RAG query executed for network segmentation standards
+- [ ] RAG query executed for security baseline standards
+- [ ] RAG query executed for tagging standards
+- [ ] RAG query executed for reference architectures
+- [ ] All retrieved standards are cited with source
+- [ ] Missing standards are explicitly stated as "not found in AI Search index"
+
+**NAMING CONVENTION VERIFICATION (CRITICAL):**
+- [ ] Resource Group names generated from RAG-retrieved naming convention (or explicitly stated as not found)
+- [ ] VNet names generated from RAG-retrieved naming convention (or explicitly stated as not found)
+- [ ] Subnet names generated from RAG-retrieved naming convention (or explicitly stated as not found)
+- [ ] Entra ID security group names generated from RAG-retrieved naming convention (or explicitly stated as not found)
+- [ ] Key Vault names generated from RAG-retrieved naming convention (or explicitly stated as not found)
+- [ ] NO example names like "rg-prod-*", "vnet-*", "sg-*-admins" unless retrieved from RAG
+- [ ] NO placeholder patterns or fabricated naming
+- [ ] NO generic Azure naming conventions unless from RAG
 
 **TABLE VERIFICATION:**
 - [ ] Section 2 (FR): Contains a properly formatted Markdown table with columns: ID | Requirement | Description | Priority | Comment
 - [ ] Section 3 (NFR): Contains a properly formatted Markdown table with columns: Category | Requirement | Target | Justification
 - [ ] Section 9.c (Decomposition): Contains a properly formatted Markdown table with columns: Component | Azure Service | SKU/Tier | Scope (RG) | Purpose | Dependencies | HA Strategy
+- [ ] All Resource Group names in Decomposition table follow RAG-retrieved naming convention
 - [ ] All tables use proper Markdown syntax with | and - characters
 - [ ] All tables are aligned and readable
 
@@ -525,11 +627,20 @@ Before returning the TAD, verify:
 - [ ] No sections are missing or marked as "TODO"
 
 **CONTENT VERIFICATION:**
-- [ ] Sodexo policies are cited where applicable
+- [ ] Sodexo policies are cited where applicable with source
 - [ ] Missing policies are explicitly stated as "Relevant policy not found in knowledge base"
 - [ ] No hallucinated information
 - [ ] No repetitive content
 - [ ] Coherence between sections is maintained
 - [ ] Document is executive-ready and presentation-grade
+- [ ] Output reflects real internal governance, not synthetic patterns
+
+**FINAL VALIDATION:**
+If ANY of the following are true, the TAD is INVALID and must be revised:
+- Naming conventions were invented instead of retrieved from RAG
+- Example names like "rg-prod-*" appear without RAG source citation
+- Security group names fabricated without RAG standard
+- VNet/Subnet names use generic patterns without RAG source
+- Standards are assumed instead of retrieved or explicitly marked as not found
 
 If any checklist item fails, REVISE the output before returning.
