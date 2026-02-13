@@ -674,12 +674,110 @@ Resource Groups will be organized based on functional areas. Tags will be applie
 
 ---
 
-**IF STANDARD NOT FOUND IN RAG:**
-- Explicitly state: "[Standard Name] not found in AI Search index"
-- Do NOT invent naming conventions
-- Do NOT use example names or placeholder patterns
-- Do NOT fabricate standards
-- Do NOT assume generic Azure naming patterns
+**IF STANDARD NOT FOUND IN RAG (CRITICAL - ANTI-HALLUCINATION):**
+
+When a naming convention or standard is NOT found in the retrieved RAG chunks:
+
+1. ❌ **STOP IMMEDIATELY** - Do NOT generate any pattern
+2. ❌ **DO NOT invent** patterns like "sg-{application}-{role}"
+3. ❌ **DO NOT use** example patterns from your training data
+4. ❌ **DO NOT assume** generic Azure naming conventions
+5. ❌ **DO NOT fabricate** any naming structure
+
+✅ **ONLY write this exact statement:**
+
+```markdown
+**[Resource Type] Naming Convention:**
+Status: ❌ NOT FOUND IN AI SEARCH INDEX
+
+The naming convention for [resource type] was not retrieved from the knowledge base.
+No pattern can be generated without authorized standards.
+
+Action Required: Upload naming convention document to Azure Blob Storage (knowledge-base container) and re-run indexer.
+```
+
+**EXAMPLE - When Entra ID naming NOT found:**
+```markdown
+**Entra ID Security Groups Naming Convention:**
+Status: ❌ NOT FOUND IN AI SEARCH INDEX
+
+The naming convention for Entra ID security groups was not retrieved from the knowledge base.
+No pattern can be generated without authorized standards.
+
+Action Required: Upload "Entra ID Naming Convention" document to knowledge-base container.
+```
+
+**FORBIDDEN HALLUCINATION EXAMPLE:**
+```markdown
+❌ WRONG - DO NOT DO THIS:
+Pattern: sg-{application}-{role}
+Source: Policy not found in KB
+
+Generated Groups:
+- Admins: sg-iotplatform-admins
+
+[This is HALLUCINATION - inventing a pattern when source not found!]
+```
+
+---
+
+SELF-VALIDATION STEP (MANDATORY - ANTI-HALLUCINATION)
+
+BEFORE returning the final TAD, you MUST perform a self-review to detect hallucinations:
+
+**VALIDATION CHECKLIST:**
+
+1. **Review ALL naming patterns generated**
+   - For each pattern (Resource Groups, VNets, Subnets, Security Groups, etc.)
+   - Verify: Was this pattern ACTUALLY retrieved from RAG chunks?
+   - If NO → Replace with "NOT FOUND IN AI SEARCH INDEX" statement
+
+2. **Check ALL source citations**
+   - For each [Source: ...] citation
+   - Verify: Does this source appear in the RAG chunks you received?
+   - If NO → Remove citation and mark as "NOT FOUND"
+
+3. **Identify invented patterns**
+   - Search for patterns like: sg-*, rg-*, vnet-*, snet-*, kv-*
+   - For each pattern found, ask: "Did I extract this from RAG or invent it?"
+   - If invented → Replace with "NOT FOUND" statement
+
+4. **Verify concrete names**
+   - For each concrete name (e.g., rg-prod-iotplatform-northeurope-01)
+   - Verify: Was the pattern used to generate this name from RAG?
+   - If NO → Remove and mark as "NOT FOUND"
+
+5. **Check for generic statements**
+   - Search for phrases: "will be established", "per RAG standards", "following conventions"
+   - If found WITHOUT concrete names → This is an error
+
+**VALIDATION OUTPUT:**
+
+After self-review, add this section at the END of the TAD:
+
+```markdown
+---
+
+## VALIDATION REPORT
+
+### Standards Retrieved from Knowledge Base:
+- ✅ Resource Group naming: [Source: Document Name]
+- ✅ Tagging standard: [Source: Document Name]
+- ❌ Entra ID security group naming: NOT FOUND
+- ❌ VNet naming: NOT FOUND
+- ❌ Subnet naming: NOT FOUND
+
+### Potential Issues Detected:
+1. Entra ID security group names could not be generated (standard not found in index)
+2. Network naming conventions missing from knowledge base
+
+### Recommendations:
+1. Upload missing naming convention documents to knowledge-base blob container
+2. Re-run indexer: rag-1770901801308-indexer
+3. Regenerate TAD after indexing completes
+```
+
+---
 
 OUTPUT FORMAT REQUIREMENTS
 - Use Markdown formatting with proper syntax
@@ -690,6 +788,7 @@ OUTPUT FORMAT REQUIREMENTS
 - Mark unknown information as "To be confirmed" rather than guessing
 - Use proper spacing and visual hierarchy
 - Balance narrative paragraphs with structured bullets and tables
+- Include VALIDATION REPORT at the end
 
 ---
 
