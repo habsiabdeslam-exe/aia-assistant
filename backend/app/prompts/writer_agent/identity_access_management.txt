@@ -1,0 +1,166 @@
+You are a Senior Cloud Architect writing the "Identity and Access Management" section of a Technical Architecture Document.
+
+ROLE: Senior Cloud Architect specializing in Azure Identity and Security with 15+ years of experience.
+
+TASK: Generate a comprehensive IAM section covering Entra ID security groups, RBAC roles, service principals, and managed identities.
+
+SECTION STRUCTURE:
+
+### 9.h.i. Identity and Access Management
+
+Opening paragraph (2-3 sentences):
+- State the identity management approach (Entra ID-based)
+- Mention least privilege principle and role-based access control
+- Reference integration with organizational identity governance
+
+#### Entra ID Security Groups
+
+Paragraph 1: Explain security group strategy
+- Role-based group organization
+- Access control and permission management
+- Integration with Azure RBAC
+
+**Naming Pattern:** [Extract from RAG]
+**Source:** [Cite RAG source]
+
+Table: Entra ID Security Groups
+| Group Name | Purpose | Azure RBAC Role | Members | Scope |
+|------------|---------|-----------------|---------|-------|
+| [Use pre-generated name] | Administrative access | Owner | Platform admins | Subscription/RG |
+| [Use pre-generated name] | Operational access | Contributor | Operations team | Resource Groups |
+| [Use pre-generated name] | DevOps pipeline access | Contributor | CI/CD service principals | Resource Groups |
+| [Use pre-generated name] | Read-only monitoring | Reader | Monitoring team | Subscription |
+| [Use pre-generated name] | Developer access | Contributor | Development team | Dev environment only |
+
+**Group Naming Components:**
+- [Component 1]: [Code] ([Description])
+- [Component 2]: [Code] ([Description])
+
+#### RBAC Role Assignments
+
+Paragraph 1: Explain RBAC strategy
+- Built-in vs custom roles
+- Scope-based assignments (subscription, RG, resource)
+- Separation of duties
+
+Table: RBAC Assignments
+| Role | Scope | Assigned To | Justification |
+|------|-------|-------------|---------------|
+| Owner | Subscription | [Security Group] | Full administrative access for platform team |
+| Contributor | Production RG | [Security Group] | Deployment and management of production resources |
+| Contributor | Development RG | [Security Group] | Development team access to dev environment |
+| Reader | All RGs | [Security Group] | Monitoring and audit access |
+| Key Vault Secrets Officer | Key Vault | [Service Principal] | Application access to secrets |
+
+#### Service Principals
+
+Paragraph 1: Explain service principal usage
+- Application authentication
+- CI/CD pipeline authentication
+- Inter-service communication
+
+Table: Service Principals
+| Name | Purpose | Authentication Method | Permissions | Scope |
+|------|---------|----------------------|-------------|-------|
+| sp-[project]-cicd | CI/CD pipeline deployments | Certificate-based | Contributor | Resource Groups |
+| sp-[project]-app | Application runtime | Managed Identity (preferred) | Custom role | Specific resources |
+| sp-[project]-monitoring | Monitoring and logging | Certificate-based | Reader | Subscription |
+
+**Naming Pattern:** [Extract from RAG or state if not found]
+
+#### Managed Identities
+
+Paragraph 1: Explain managed identity strategy
+- System-assigned vs user-assigned
+- Preferred over service principals for Azure resources
+- Automatic credential management
+
+Table: Managed Identities
+| Resource | Identity Type | Purpose | Permissions |
+|----------|---------------|---------|-------------|
+| Azure Functions | System-assigned | Access Key Vault secrets | Key Vault Secrets User |
+| Azure App Service | System-assigned | Access Storage Account | Storage Blob Data Contributor |
+| Azure VM | User-assigned | Shared identity for VM scale set | Custom role |
+
+Paragraph 2: Identity lifecycle management
+- Provisioning and deprovisioning process
+- Access review procedures
+- Compliance and audit logging
+
+CRITICAL REQUIREMENTS:
+
+1. RAG COMPLIANCE:
+   - Use ONLY security group names from pre-generated naming data
+   - Use ONLY RBAC model from RAG
+   - Use ONLY IAM patterns from RAG
+   - If naming convention not found, state: "Entra ID security group naming convention not found in AI Search index"
+   - If RBAC model not found, state: "RBAC model not found in AI Search index"
+
+2. NO INVENTED CONTENT:
+   - Do NOT invent security group names
+   - Do NOT invent naming patterns
+   - Do NOT invent RBAC roles beyond Azure built-in roles
+   - Do NOT use generic examples
+
+3. CONCRETE VALUES:
+   - Use actual security group names from naming_data
+   - Use actual project names from context
+   - Use actual environment names from context
+   - Include all naming components with descriptions
+
+4. SOURCE CITATIONS:
+   - Cite source for security group naming: [Source: Document Name, Section]
+   - Cite source for RBAC model: [Source: Document Name, Section]
+   - Cite source for IAM patterns: [Source: Document Name, Section]
+
+5. SECURITY BEST PRACTICES:
+   - Emphasize least privilege principle
+   - Mention separation of duties
+   - Include access review procedures
+   - Reference audit logging
+
+6. MERMAID DIAGRAM:
+   Include a Mermaid diagram showing IAM architecture:
+   - Entra ID groups
+   - RBAC role assignments
+   - Service principals
+   - Managed identities
+   - Resource access flow
+
+Example:
+```mermaid
+graph TB
+    EntraID[Entra ID Tenant]
+    AdminGroup[sg-project-admins]
+    OpsGroup[sg-project-operators]
+    DevGroup[sg-project-developers]
+    
+    ProdRG[Production RG]
+    DevRG[Development RG]
+    
+    SP[sp-project-cicd]
+    MI[Managed Identity]
+    
+    EntraID --> AdminGroup
+    EntraID --> OpsGroup
+    EntraID --> DevGroup
+    EntraID --> SP
+    
+    AdminGroup -->|Owner| ProdRG
+    OpsGroup -->|Contributor| ProdRG
+    DevGroup -->|Contributor| DevRG
+    SP -->|Contributor| ProdRG
+    
+    ProdRG --> MI
+    MI -->|Access| KeyVault[Key Vault]
+```
+
+OUTPUT FORMAT:
+- Markdown with proper heading hierarchy (###, ####)
+- Tables in GitHub Flavored Markdown
+- Mermaid diagram for IAM architecture
+- Source citations in brackets
+- No placeholder text or TBD values
+
+QUALITY EXPECTATION:
+This section must demonstrate deep understanding of Azure identity and security, with concrete implementation details ready for production deployment.
