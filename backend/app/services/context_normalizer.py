@@ -20,13 +20,13 @@ class ContextNormalizationService:
     """
     
     def __init__(self):
-        self.required_fields = [
-            "project_name",
-            "description",
-            "cloud_region"
-        ]
+        # Fields are optional - we extract from analysis text if not provided directly
+        self.required_fields = []
         
         self.optional_fields = [
+            "project_name",
+            "description",
+            "cloud_region",
             "business_line",
             "region",
             "environments",
@@ -35,7 +35,8 @@ class ContextNormalizationService:
             "constraints",
             "assumptions",
             "risks",
-            "stakeholders"
+            "stakeholders",
+            "analysis"  # From requirements analyzer
         ]
     
     def normalize(self, raw_requirements: Dict[str, Any]) -> Dict[str, Any]:
@@ -89,15 +90,41 @@ class ContextNormalizationService:
     def _normalize_project_info(self, raw: Dict[str, Any]) -> Dict[str, Any]:
         """Extract and normalize project information"""
         
-        project_name_raw = raw.get("project_name", "PROJECT")
+        # Try to extract from direct fields or from analysis text
+        project_name_raw = raw.get("project_name", "")
+        
+        # If no project_name, try to extract from analysis
+        if not project_name_raw and "analysis" in raw:
+            # Try to extract project name from analysis text
+            analysis_text = raw.get("analysis", "")
+            # Look for patterns like "Project: XXX" or first heading
+            import re
+            match = re.search(r'(?:Project|Application|System):\s*([^\n]+)', analysis_text, re.IGNORECASE)
+            if match:
+                project_name_raw = match.group(1).strip()
+            else:
+                # Default to "Project" if nothing found
+                project_name_raw = "Project"
+        
+        if not project_name_raw:
+            project_name_raw = "Project"
         
         # Extract acronym from project name (e.g., "IoT Platform" -> "IOT")
         project_acronym = self._extract_acronym(project_name_raw)
         
+        # Extract description from analysis if not provided
+        description = raw.get("description", "")
+        if not description and "analysis" in raw:
+            # Use first paragraph of analysis as description
+            analysis_text = raw.get("analysis", "")
+            paragraphs = [p.strip() for p in analysis_text.split("\n\n") if p.strip() and not p.strip().startswith("#")]
+            if paragraphs:
+                description = paragraphs[0][:500]  # First 500 chars
+        
         return {
             "name": project_acronym,
             "full_name": project_name_raw,
-            "description": raw.get("description", ""),
+            "description": description,
             "business_line": raw.get("business_line", "GLB").upper(),
             "region": raw.get("region", "GLB").upper(),
             "owner": raw.get("owner", ""),
@@ -196,27 +223,33 @@ class ContextNormalizationService:
         
         missing_fields = []
         
-        # Check required fields
-        for field in self.required_fields:
-            if not raw.get(field):
-                missing_fields.append(field)
+        # Very lenient validation - if we have analysis text or any requirements, we're good
+        has_analysis = bool(raw.get("analysis"))
+        has_functional_reqs = bool(raw.get("functional_requirements"))
+        has_non_functional_reqs = bool(raw.get("non_functional_requirements"))
+        has_any_content = has_analysis or has_functional_reqs or has_non_functional_reqs
         
-        # Check project info completeness
-        if not project.get("full_name"):
-            missing_fields.append("project.full_name")
-        if not project.get("description"):
-            missing_fields.append("project.description")
+        # Only check critical fields if no analysis text
+        if not has_any_content:
+            if not project.get("full_name"):
+                missing_fields.append("project_name")
+            if not project.get("description"):
+                missing_fields.append("description")
+            if not infrastructure.get("primary_region"):
+                missing_fields.append("cloud_region")
         
-        # Check infrastructure completeness
-        if not infrastructure.get("primary_region"):
-            missing_fields.append("infrastructure.primary_region")
+        # Calculate completeness score based on what we have
+        total_fields = len(self.optional_fields)
+        provided_fields = sum(1 for f in self.optional_fields if raw.get(f))
         
-        # Calculate completeness score
-        total_fields = len(self.required_fields) + len(self.optional_fields)
-        provided_fields = sum(1 for f in self.required_fields + self.optional_fields if raw.get(f))
-        score = provided_fields / total_fields
+        # Boost score if we have analysis text (most important)
+        if has_analysis:
+            provided_fields += 5  # Analysis text is worth multiple fields
         
-        is_complete = len(missing_fields) == 0 and score >= 0.6
+        score = min(1.0, provided_fields / max(1, total_fields))
+        
+        # Accept as complete if we have any content at all
+        is_complete = has_any_content or (len(missing_fields) == 0 and score >= 0.3)
         
         return {
             "is_complete": is_complete,
